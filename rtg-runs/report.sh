@@ -1,21 +1,20 @@
 #!/usr/bin/env bash
 
-export PYTHONPATH=/home/07394/tgowda/repos/sacre-BLEU
+export PYTHONPATH=~/work/isi/sacrebleu  #/home/07394/tgowda/repos/sacre-BLEU
 MULTIBLEU=~/repos/mosesdecoder/scripts/generic/multi-bleu-detok.perl
 
+LC="-lc"
 function sacre_bleu {
     hyp=$1
     ref=$2
-    if [[ -f $ref && -f $hyp ]]; then
+    lang=en-es
+
+    if [[ -f $hyp ]]; then
         # ;s/<pad>//g
-        score=$(cut -f1 $hyp | sed 's/<unk>//g' | python -m sacrebleu --force -m bleu -b  $ref)
+        score=$(cut -f1 $hyp | sed 's/<unk>//g' | python -m sacrebleu -m bleu -b -t $ref -l $lang $LC )
         echo $score
     else
-        if [[ ! -f $hyp ]]; then
-            echo "NA-Hyp"
-        else
-            echo "NA-Ref"
-        fi
+        echo "NA-Hyp"
     fi
 }
 
@@ -36,28 +35,28 @@ function multi_bleu {
 }
 
 
-function macro_bleu {
+function macro_f {
     hyp=$1
     ref=$2
-    if [[ -f $ref && -f $hyp ]]; then
+    lang=en-es
+    if [[ -f $hyp ]]; then
         # ;s/<pad>//g
-        score=$(cut -f1 $hyp | sed 's/<unk>//g' | python -m sacrebleu --force -m rebleu -ro 4 -w 2 -a macro -b  $ref)
+        score=$(cut -f1 $hyp | sed 's/<unk>//g' | python -m sacrebleu -m macrof -w 2 -b -t $ref -l $lang $LC )
         echo $score
     else
-        if [[ ! -f $hyp ]]; then
-            echo "NA-Hyp"
-        else
-            echo "NA-Ref"
-        fi
+        echo "NA-Hyp"
     fi
 }
 
 delim=','
 
-names=$(for i in ${@}; do [[ -d $(echo $i/test_*) ]] || continue; for j in ${i}/test_*/*.ref ; do basename $j; done done | sed 's/.ref$//' | sort | uniq)
-names_str=$(echo $names | sed "s/ /$delim/g")
+#echo ${@}
+
+
+
 #printf "Experiment${delim}SacreBLEU:${names_str}${delim}MultiBLEU:${names_str}\n"
-printf "Experiment${delim}MultiBLEU:${names_str}\n"
+printf "Experiment${delim}NT13_BLEU${delim}NT13_MacroF\n"
+#exit 1
 
 for d in ${@}; do
     for td in $d/test_*; do
@@ -68,14 +67,15 @@ for d in ${@}; do
         #    bleu=$(sacre_bleu $hyp_detok $ref)
         #    printf "${delim}${bleu}"
         #done
-        # Multi bleu
-        for t in $names; do
-            hyp_detok=${td}/$t.out.*detok
-            ref=${td}/$t.ref
-            score=$(multi_bleu $hyp_detok $ref)
-            printf "${delim}${score}"
-        done
-        printf "\n"
-    done
+    hyp_detok=$(echo ${td}/newstest2013.out.*detok)
+    #echo $hyp_detok
+    ref="wmt13"
+    bleu=$(sacre_bleu $hyp_detok "$ref")
+    printf "${delim}${bleu}"
+
+    macrof=$(macro_f $hyp_detok "$ref")
+    printf "${delim}${macrof}"
+
     printf "\n"
+    done
 done
