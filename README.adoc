@@ -1,0 +1,9 @@
+# NMT Learning Curve 
+
+Re-iteration of the famous learning curve experiment from https://aclanthology.org/W17-3204/[Koehn and Knowles (2017)]
+
+
+Summary:
+Transformer NMT, when its hyperparameters are tuned correctly, requires an order of mangnitude less training than Koehn and Knowles (2017) NMT models
+
+
